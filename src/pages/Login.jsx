@@ -4,8 +4,8 @@ import {
   FaGoogle,
   FaFacebookF,
   FaInstagram,
-  FaXTwitter,
-} from "react-icons/fa6";
+  FaTwitter,
+} from "react-icons/fa";
 
 function Login({ setLoggedInUser }) {
   const [email, setEmail] = useState("");
@@ -334,7 +334,7 @@ function Login({ setLoggedInUser }) {
             title="Continue with X"
             className="group w-14 h-14 rounded-full bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 shadow-[0_6px_0_rgb(180,180,180)] dark:shadow-[0_6px_0_rgb(30,41,59)] hover:shadow-[0_3px_0_rgb(180,180,180)] hover:translate-y-[3px] active:shadow-none active:translate-y-[6px] transition-all duration-200 flex items-center justify-center cursor-pointer"
           >
-            <FaXTwitter className="text-xl text-gray-900 dark:text-white group-hover:scale-110 transition" />
+            <FaTwitter className="text-xl text-gray-900 dark:text-white group-hover:scale-110 transition" />
           </button>
         </div>
 
