@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 function FoodCard({
   id,
@@ -9,52 +9,83 @@ function FoodCard({
   setCartItems,
   wishlist,
   setWishlist,
+  loggedInUser,
 }) {
-  const addToCart = () => {
-    const existingItem = cartItems.find((item) => item.name === name);
+  const navigate = useNavigate();
 
-    if (existingItem) {
-      const updatedCart = cartItems.map((item) =>
-        item.name === name
-          ? {
-              ...item,
-              quantity: item.quantity + 1,
-            }
-          : item,
-      );
+  const handleLoginRequired = () => {
+    alert("Please login first to continue.");
+    navigate("/login");
+  };
 
-      setCartItems(updatedCart);
-
-      alert("Cart Updated 🛒");
+  const handleShare = () => {
+    if (navigator.share) {
+      navigator
+        .share({
+          title: name,
+          text: `Check out this delicious ${name} on FoodieHub! Only ₹${price}`,
+          url: window.location.href,
+        })
+        .catch(() => {});
     } else {
-      setCartItems([
-        ...cartItems,
-
-        {
-          id,
-          image,
-          name,
-          price,
-          quantity: 1,
-        },
-      ]);
-
-      alert("Added to Cart 🛒");
+      navigator.clipboard
+        .writeText(window.location.href)
+        .then(() => alert("Link copied to clipboard!"));
     }
   };
 
+  const addToCart = () => {
+    if (!loggedInUser) {
+      handleLoginRequired();
+      return;
+    }
+
+    const existingItem = cartItems.find((item) => item.id === id);
+
+    if (existingItem) {
+      const updatedCart = cartItems.map((item) =>
+        item.id === id
+          ? {
+              ...item,
+              quantity: (item.quantity || 1) + 1,
+            }
+          : item
+      );
+
+      setCartItems(updatedCart);
+      alert("Cart updated successfully.");
+      return;
+    }
+
+    setCartItems([
+      ...cartItems,
+      {
+        id,
+        image,
+        name,
+        price,
+        quantity: 1,
+      },
+    ]);
+
+    alert("Added to cart successfully.");
+  };
+
   const addWishlist = () => {
-    const alreadyAdded = wishlist.find((item) => item.name === name);
+    if (!loggedInUser) {
+      handleLoginRequired();
+      return;
+    }
+
+    const alreadyAdded = wishlist.find((item) => item.id === id);
 
     if (alreadyAdded) {
-      alert("Already in Wishlist ❤️");
-
+      alert("This item is already in your wishlist.");
       return;
     }
 
     setWishlist([
       ...wishlist,
-
       {
         id,
         image,
@@ -63,169 +94,64 @@ function FoodCard({
       },
     ]);
 
-    alert("Added to Wishlist ❤️");
+    alert("Added to wishlist successfully.");
   };
 
   return (
-    <div
-      className="
-      bg-white
-      dark:bg-slate-800
-      rounded-3xl
-      overflow-hidden
-      shadow-xl
-      hover:shadow-orange-400/40
-      hover:-translate-y-3
-      transition-all
-      duration-500
-    "
-    >
-      {/* Image Section */}
-
-      <div
-        className="
-        relative
-        overflow-hidden
-      "
-      >
+    <div className="relative overflow-hidden rounded-3xl bg-white shadow-xl transition-all duration-500 hover:-translate-y-3 hover:shadow-orange-400/40 dark:bg-slate-800">
+      <div className="relative overflow-hidden">
         <img
           src={image}
           alt={name}
-          className="
-            w-full
-            h-56
-            object-cover
-            hover:scale-110
-            transition-transform
-            duration-500
-          "
+          className="h-56 w-full object-cover transition-transform duration-500 hover:scale-110"
         />
 
-        <span
-          className="
-          absolute
-          top-3
-          left-3
-          bg-orange-500
-          text-white
-          text-xs
-          px-3
-          py-1
-          rounded-full
-          shadow-lg
-        "
-        >
+        <span className="absolute left-3 top-3 z-10 rounded-full bg-orange-500 px-3 py-1 text-xs text-white shadow-lg">
           Popular
         </span>
 
         <button
           onClick={addWishlist}
-          className="
-            absolute
-            top-3
-            right-3
-            bg-white
-            dark:bg-slate-700
-            text-red-500
-            rounded-full
-            w-10
-            h-10
-            flex
-            items-center
-            justify-center
-            shadow-lg
-            hover:bg-red-500
-            hover:text-white
-            hover:scale-110
-            transition-all
-            duration-300
-          "
+          className="absolute right-3 top-3 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white text-red-500 shadow-lg transition-all duration-300 hover:scale-110 hover:bg-red-500 hover:text-white dark:bg-slate-700"
+          title="Add to Wishlist"
         >
           ❤️
         </button>
+
+        <button
+          onClick={handleShare}
+          className="absolute right-3 top-16 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white text-blue-500 shadow-lg transition-all duration-300 hover:scale-110 hover:bg-blue-500 hover:text-white dark:bg-slate-700 dark:text-blue-400"
+          title="Share Food"
+        >
+          🔗
+        </button>
       </div>
 
-      {/* Content */}
-
       <div className="p-5">
-        <h2
-          className="
-          text-2xl
-          font-bold
-          text-gray-900
-          dark:text-white
-        "
-        >
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
           {name}
         </h2>
 
-        <div
-          className="
-          flex
-          justify-between
-          items-center
-          mt-3
-        "
-        >
-          <p
-            className="
-            text-orange-500
-            font-bold
-            text-2xl
-          "
-          >
+        <div className="mt-3 flex items-center justify-between">
+          <p className="text-2xl font-bold text-orange-500">
             ₹{price}
           </p>
 
-          <span
-            className="
-            text-yellow-500
-            font-semibold
-          "
-          >
+          <span className="font-semibold text-yellow-500">
             ⭐ 4.8
           </span>
         </div>
 
         <button
           onClick={addToCart}
-          className="
-            w-full
-            mt-6
-            bg-orange-500
-            text-white
-            py-3
-            rounded-xl
-            hover:bg-orange-600
-            hover:scale-105
-            transition-all
-            duration-300
-            font-semibold
-            shadow-lg
-          "
+          className="mt-6 w-full cursor-pointer rounded-xl bg-orange-500 py-3 font-semibold text-white shadow-lg transition-all duration-300 hover:scale-105 hover:bg-orange-600"
         >
           🛒 Add To Cart
         </button>
 
         <Link
           to={`/food/${id}`}
-          className="
-            block
-            text-center
-            mt-4
-            border-2
-            border-blue-500
-            dark:border-blue-400
-            text-blue-500
-            dark:text-blue-400
-            py-3
-            rounded-xl
-            hover:bg-blue-500
-            hover:text-white
-            transition-all
-            duration-300
-            font-semibold
-          "
+          className="mt-4 block rounded-xl border-2 border-blue-500 py-3 text-center font-semibold text-blue-500 transition-all duration-300 hover:bg-blue-500 hover:text-white dark:border-blue-400 dark:text-blue-400"
         >
           👀 View Details
         </Link>

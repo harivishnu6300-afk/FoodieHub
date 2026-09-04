@@ -1,297 +1,326 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
+const countries = [
+  { code: "+91", name: "India", flag: "🇮🇳", digits: 10 },
+  { code: "+1", name: "USA", flag: "🇺🇸", digits: 10 },
+  { code: "+44", name: "UK", flag: "🇬🇧", digits: 10 },
+  { code: "+971", name: "UAE", flag: "🇦🇪", digits: 9 },
+  { code: "+61", name: "Australia", flag: "🇦🇺", digits: 9 },
+  { code: "+65", name: "Singapore", flag: "🇸🇬", digits: 8 },
+  { code: "+81", name: "Japan", flag: "🇯🇵", digits: 10 },
+];
+
 function Register() {
   const navigate = useNavigate();
 
   const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [emailOtp, setEmailOtp] = useState("");
   const [countryCode, setCountryCode] = useState("+91");
-  const [mobile, setMobile] = useState("");
-  const [mobileOtp, setMobileOtp] = useState("");
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [agreeTerms, setAgreeTerms] = useState(false);
 
-  // Eye symbol states for password fields
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const [errors, setErrors] = useState({});
-  const [successMessage, setSuccessMessage] = useState("");
+  const [error, setError] = useState("");
 
-  const validate = () => {
-    let newErrors = {};
+  const selectedCountry =
+    countries.find((country) => country.code === countryCode) ||
+    countries[0];
 
-    if (!name.trim()) {
-      newErrors.name = "Full Name is required";
+  const handlePhoneChange = (event) => {
+    const numbersOnly = event.target.value.replace(/\D/g, "");
+
+    setPhone(numbersOnly.slice(0, selectedCountry.digits));
+  };
+
+  const handleRegister = (event) => {
+    event.preventDefault();
+
+    setError("");
+
+    const cleanName = name.trim();
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanPhone = phone.trim();
+
+    if (!cleanName) {
+      setError("Please enter your name.");
+      return;
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!email) {
-      newErrors.email = "Email is required";
-    } else if (!emailRegex.test(email)) {
-      newErrors.email = "Enter a valid email format";
+    if (cleanName.length < 2) {
+      setError("Name must contain at least 2 characters.");
+      return;
     }
 
-    if (!emailOtp) {
-      newErrors.emailOtp = "Email OTP is required";
+    if (!cleanEmail) {
+      setError("Please enter your email address.");
+      return;
     }
 
-    const mobileRegex = /^\d{10}$/;
-    if (!mobile) {
-      newErrors.mobile = "Mobile number is required";
-    } else if (!mobileRegex.test(mobile)) {
-      newErrors.mobile = "Mobile number must be exactly 10 digits";
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!emailPattern.test(cleanEmail)) {
+      setError("Please enter a valid email address.");
+      return;
     }
 
-    if (!mobileOtp) {
-      newErrors.mobileOtp = "Mobile OTP is required";
+    if (cleanPhone.length !== selectedCountry.digits) {
+      setError(
+        `${selectedCountry.name} phone number must contain exactly ${selectedCountry.digits} digits.`
+      );
+      return;
     }
 
-    // Strong Password Validation (Min 8 chars, Uppercase, Lowercase, Number, Special Character)
-    const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
     if (!password) {
-      newErrors.password = "Password is required";
-    } else if (!strongPasswordRegex.test(password)) {
-      newErrors.password = "Min 8 chars: include Upper, Lower, Number & Special char";
+      setError("Please enter a password.");
+      return;
+    }
+
+    if (password.length < 6) {
+      setError("Password must contain at least 6 characters.");
+      return;
+    }
+
+    if (!confirmPassword) {
+      setError("Please confirm your password.");
+      return;
     }
 
     if (password !== confirmPassword) {
-      newErrors.confirmPassword = "Passwords do not match";
+      setError("Password and confirm password do not match.");
+      return;
     }
 
-    if (!agreeTerms) {
-      newErrors.agreeTerms = "You must agree to the terms and conditions";
-    }
+    try {
+      const savedUsers = localStorage.getItem("users");
 
-    return newErrors;
-  };
+      let users = [];
 
-  const register = (e) => {
-    e.preventDefault();
-    setSuccessMessage("");
-    
-    const validationErrors = validate();
-    setErrors(validationErrors);
+      if (savedUsers) {
+        const parsedUsers = JSON.parse(savedUsers);
 
-    if (Object.keys(validationErrors).length === 0) {
-      const user = {
-        name,
-        email,
+        users = Array.isArray(parsedUsers) ? parsedUsers : [];
+      }
+
+      const emailAlreadyExists = users.some((user) => {
+        if (!user || !user.email) {
+          return false;
+        }
+
+        return user.email.trim().toLowerCase() === cleanEmail;
+      });
+
+      if (emailAlreadyExists) {
+        setError(
+          "This email is already registered. Please login or use another email."
+        );
+        return;
+      }
+
+      const fullPhoneNumber = `${countryCode}${cleanPhone}`;
+
+      const phoneAlreadyExists = users.some((user) => {
+        if (!user || !user.phone) {
+          return false;
+        }
+
+        const savedPhone = String(user.phone).replace(/\s/g, "");
+
+        return savedPhone === fullPhoneNumber;
+      });
+
+      if (phoneAlreadyExists) {
+        setError(
+          "This phone number is already registered. Please use another number."
+        );
+        return;
+      }
+
+      const newUser = {
+        id: Date.now(),
+        name: cleanName,
+        email: cleanEmail,
         countryCode,
-        mobile,
+        phone: fullPhoneNumber,
         password,
+        createdAt: new Date().toISOString(),
       };
 
-      localStorage.setItem("user", JSON.stringify(user));
-      setSuccessMessage("Registration Successful 🎉 Redirecting to login...");
+      const updatedUsers = [...users, newUser];
 
-      setTimeout(() => {
-        navigate("/login");
-      }, 1500);
+      localStorage.setItem("users", JSON.stringify(updatedUsers));
+
+      alert("Account created successfully! Please login.");
+
+      navigate("/login");
+    } catch (error) {
+      console.error("Registration error:", error);
+
+      setError(
+        "Unable to create the account. Please check your saved data and try again."
+      );
     }
   };
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-tr from-orange-100 via-amber-50 to-orange-200 py-10">
-      
-      {/* Smooth Moving Food Background Animations */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
-        <div className="absolute top-20 left-16 text-5xl animate-float-1 opacity-80 filter drop-shadow-lg">
-          🍔
-        </div>
-        <div className="absolute top-32 right-20 text-6xl animate-float-2 opacity-80 filter drop-shadow-lg">
-          🍕
-        </div>
-        <div className="absolute bottom-28 left-24 text-5xl animate-float-3 opacity-80 filter drop-shadow-lg">
-          🍟
-        </div>
-        <div className="absolute bottom-32 right-28 text-6xl animate-float-1 opacity-80 filter drop-shadow-lg">
-          🥤
-        </div>
-        <div className="absolute top-1/2 left-10 text-5xl animate-float-2 opacity-75 filter drop-shadow-lg">
-          🍜
-        </div>
-        <div className="absolute top-1/3 right-12 text-5xl animate-float-3 opacity-75 filter drop-shadow-lg">
-          🍰
-        </div>
-      </div>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 via-white to-orange-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 px-4 py-10">
+      <div className="w-full max-w-lg bg-white dark:bg-slate-900 rounded-3xl shadow-2xl p-8 sm:p-10">
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white">
+            Create Account
+          </h1>
 
-      {/* Background Soft Glow Blobs */}
-      <div className="absolute -top-20 -left-20 w-96 h-96 bg-orange-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
-      <div className="absolute -bottom-20 -right-20 w-96 h-96 bg-amber-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
+          <p className="mt-3 text-gray-500 dark:text-gray-400 text-lg">
+            Join FoodieHub today
+          </p>
+        </div>
 
-      {/* Register Card */}
-      <div className="relative z-10 bg-white/85 backdrop-blur-md w-full max-w-lg p-8 rounded-2xl shadow-2xl border border-orange-200">
-        <h1 className="text-3xl font-bold text-center mb-6 text-gray-800">Register</h1>
-
-        {successMessage && (
-          <div className="mb-4 p-3 bg-green-100 text-green-700 rounded-lg text-center text-sm font-medium">
-            {successMessage}
+        {error && (
+          <div className="mb-5 rounded-xl bg-red-100 dark:bg-red-500/20 border border-red-300 dark:border-red-500/40 px-4 py-3 text-red-600 dark:text-red-400 text-sm font-medium">
+            {error}
           </div>
         )}
 
-        <form onSubmit={register} className="space-y-4">
-          {/* Full Name */}
+        <form onSubmit={handleRegister} className="space-y-5">
           <div>
+            <label className="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-300">
+              Full Name
+            </label>
+
             <input
               type="text"
-              placeholder="Full Name"
+              placeholder="Enter your name"
               value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full border border-gray-300 p-3 rounded-lg bg-white/90 focus:outline-none focus:ring-2 focus:ring-orange-500"
+              onChange={(event) => setName(event.target.value)}
+              className="w-full rounded-2xl border border-gray-300 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 px-5 py-4 text-gray-900 dark:text-white outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20"
             />
-            {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
           </div>
 
-          {/* Email Address */}
           <div>
+            <label className="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-300">
+              Email Address
+            </label>
+
             <input
               type="email"
-              placeholder="Email Address"
+              placeholder="Enter your email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full border border-gray-300 p-3 rounded-lg bg-white/90 focus:outline-none focus:ring-2 focus:ring-orange-500"
+              onChange={(event) => setEmail(event.target.value)}
+              className="w-full rounded-2xl border border-gray-300 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 px-5 py-4 text-gray-900 dark:text-white outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20"
             />
-            {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
+
+            <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+              Each email address can be used for only one account.
+            </p>
           </div>
 
-          {/* Email OTP */}
           <div>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                placeholder="Enter Email OTP"
-                value={emailOtp}
-                onChange={(e) => setEmailOtp(e.target.value)}
-                className="w-full border border-gray-300 p-3 rounded-lg bg-white/90 focus:outline-none focus:ring-2 focus:ring-orange-500"
-              />
-              <button type="button" className="bg-gray-800 text-white px-4 py-2 rounded-lg text-sm whitespace-nowrap hover:bg-black transition">
-                Send OTP
-              </button>
-            </div>
-            {errors.emailOtp && <p className="text-red-500 text-xs mt-1">{errors.emailOtp}</p>}
-          </div>
+            <label className="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-300">
+              Phone Number
+            </label>
 
-          {/* Country Code & Mobile Number */}
-          <div>
-            <div className="flex gap-2">
+            <div className="flex gap-3">
               <select
                 value={countryCode}
-                onChange={(e) => setCountryCode(e.target.value)}
-                className="border border-gray-300 p-3 rounded-lg bg-white/90 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                onChange={(event) => {
+                  setCountryCode(event.target.value);
+                  setPhone("");
+                }}
+                className="w-36 rounded-2xl border border-gray-300 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 px-3 py-4 text-gray-900 dark:text-white outline-none focus:border-orange-500"
               >
-                <option value="+91">+91</option>
-                <option value="+1">+1</option>
-                <option value="+44">+44</option>
+                {countries.map((country) => (
+                  <option key={country.code} value={country.code}>
+                    {country.flag} {country.code}
+                  </option>
+                ))}
               </select>
+
               <input
                 type="text"
-                placeholder="10-digit Mobile Number"
-                maxLength="10"
-                value={mobile}
-                onChange={(e) => setMobile(e.target.value)}
-                className="w-full border border-gray-300 p-3 rounded-lg bg-white/90 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                inputMode="numeric"
+                placeholder={`${selectedCountry.digits} digit phone number`}
+                value={phone}
+                onChange={handlePhoneChange}
+                className="flex-1 rounded-2xl border border-gray-300 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 px-5 py-4 text-gray-900 dark:text-white outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20"
               />
             </div>
-            {errors.mobile && <p className="text-red-500 text-xs mt-1">{errors.mobile}</p>}
+
+            <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+              {selectedCountry.name} numbers must contain exactly{" "}
+              {selectedCountry.digits} digits.
+            </p>
           </div>
 
-          {/* Mobile OTP */}
-          <div>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                placeholder="Enter Mobile OTP"
-                value={mobileOtp}
-                onChange={(e) => setMobileOtp(e.target.value)}
-                className="w-full border border-gray-300 p-3 rounded-lg bg-white/90 focus:outline-none focus:ring-2 focus:ring-orange-500"
-              />
-              <button type="button" className="bg-gray-800 text-white px-4 py-2 rounded-lg text-sm whitespace-nowrap hover:bg-black transition">
-                Send OTP
-              </button>
-            </div>
-            {errors.mobileOtp && <p className="text-red-500 text-xs mt-1">{errors.mobileOtp}</p>}
+          <div className="relative">
+            <label className="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-300">
+              Password
+            </label>
+
+            <input
+              type={showPassword ? "text" : "password"}
+              placeholder="Enter password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              className="w-full rounded-2xl border border-gray-300 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 px-5 py-4 pr-20 text-gray-900 dark:text-white outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20"
+            />
+
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-5 bottom-4 font-medium text-orange-500 hover:text-orange-600"
+            >
+              {showPassword ? "Hide" : "Show"}
+            </button>
           </div>
 
-          {/* Password with Eye Symbol */}
-          <div>
-            <div className="relative">
-              <input
-                type={showPassword ? "text" : "password"}
-                placeholder="Password (e.g., Abc@1234)"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full border border-gray-300 p-3 rounded-lg pr-12 bg-white/90 focus:outline-none focus:ring-2 focus:ring-orange-500"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 text-sm font-semibold"
-              >
-                {showPassword ? "Hide" : "Show"}
-              </button>
-            </div>
-            {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password}</p>}
+          <div className="relative">
+            <label className="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-300">
+              Confirm Password
+            </label>
+
+            <input
+              type={showConfirmPassword ? "text" : "password"}
+              placeholder="Confirm password"
+              value={confirmPassword}
+              onChange={(event) =>
+                setConfirmPassword(event.target.value)
+              }
+              className="w-full rounded-2xl border border-gray-300 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 px-5 py-4 pr-20 text-gray-900 dark:text-white outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20"
+            />
+
+            <button
+              type="button"
+              onClick={() =>
+                setShowConfirmPassword(!showConfirmPassword)
+              }
+              className="absolute right-5 bottom-4 font-medium text-orange-500 hover:text-orange-600"
+            >
+              {showConfirmPassword ? "Hide" : "Show"}
+            </button>
           </div>
 
-          {/* Confirm Password with Eye Symbol */}
-          <div>
-            <div className="relative">
-              <input
-                type={showConfirmPassword ? "text" : "password"}
-                placeholder="Confirm Password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full border border-gray-300 p-3 rounded-lg pr-12 bg-white/90 focus:outline-none focus:ring-2 focus:ring-orange-500"
-              />
-              <button
-                type="button"
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 text-sm font-semibold"
-              >
-                {showConfirmPassword ? "Hide" : "Show"}
-              </button>
-            </div>
-            {errors.confirmPassword && <p className="text-red-500 text-xs mt-1">{errors.confirmPassword}</p>}
-          </div>
-
-          {/* Terms Checkbox */}
-          <div>
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="terms"
-                checked={agreeTerms}
-                onChange={(e) => setAgreeTerms(e.target.checked)}
-                className="w-4 h-4 text-orange-500 rounded border-gray-300 focus:ring-orange-500"
-              />
-              <label htmlFor="terms" className="text-sm text-gray-700">
-                I agree to the Terms and Conditions
-              </label>
-            </div>
-            {errors.agreeTerms && <p className="text-red-500 text-xs mt-1">{errors.agreeTerms}</p>}
-          </div>
-
-          {/* Submit Button */}
           <button
             type="submit"
-            className="w-full bg-orange-500 text-white py-3 rounded-lg hover:bg-orange-600 font-semibold shadow-md transition duration-300"
+            className="w-full rounded-2xl bg-orange-500 py-4 text-lg font-bold text-white shadow-lg transition duration-300 hover:bg-orange-600 hover:scale-[1.02]"
           >
-            Register
+            Create Account
           </button>
         </form>
 
-        <p className="text-center mt-6 text-sm text-gray-600">
+        <p className="mt-8 text-center text-gray-500 dark:text-gray-400">
           Already have an account?{" "}
-          <Link to="/login" className="text-orange-600 font-bold hover:underline">
+          <Link
+            to="/login"
+            className="font-bold text-orange-500 hover:text-orange-600"
+          >
             Login
           </Link>
         </p>
       </div>
-    </section>
+    </div>
   );
 }
 

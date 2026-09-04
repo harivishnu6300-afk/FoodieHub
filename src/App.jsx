@@ -1,38 +1,56 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Routes, Route } from "react-router-dom";
 
 import Navbar from "./components/Navbar";
+import Footer from "./components/Footer";
 
 import Home from "./pages/Home";
 import Menu from "./pages/Menu";
-import Cart from "./pages/Cart";
-import Wishlist from "./pages/Wishlist";
 import Contact from "./pages/Contact";
 import FoodDetails from "./pages/FoodDetails";
-import Checkout from "./pages/Checkout";
-import OrderSuccess from "./pages/OrderSuccess";
+import Cart from "./pages/Cart";
+import Wishlist from "./pages/Wishlist";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-import Profile from "./pages/Profile";
+import ForgotPassword from "./pages/ForgotPassword";
+import Checkout from "./pages/Checkout";
 import OrderHistory from "./pages/OrderHistory";
-import ForgotPassword from "./pages/ForgotPassword"; // <-- 1. Import chesamu
+import Profile from "./pages/Profile";
 
 function App() {
   const [search, setSearch] = useState("");
-
   const [selectedCategory, setSelectedCategory] = useState("All");
 
   const [cartItems, setCartItems] = useState(() => {
-    return JSON.parse(localStorage.getItem("cartItems")) || [];
+    try {
+      const savedCart = localStorage.getItem("cartItems");
+      return savedCart ? JSON.parse(savedCart) : [];
+    } catch {
+      return [];
+    }
   });
 
   const [wishlist, setWishlist] = useState(() => {
-    return JSON.parse(localStorage.getItem("wishlist")) || [];
+    try {
+      const savedWishlist = localStorage.getItem("wishlist");
+      return savedWishlist ? JSON.parse(savedWishlist) : [];
+    } catch {
+      return [];
+    }
   });
 
-  const [darkMode, setDarkMode] = useState(() => {
-    return localStorage.getItem("darkMode") === "true";
+  const [loggedInUser, setLoggedInUser] = useState(() => {
+    try {
+      const savedUser = localStorage.getItem("loggedInUser");
+      return savedUser ? JSON.parse(savedUser) : null;
+    } catch {
+      return null;
+    }
   });
+
+  const [darkMode, setDarkMode] = useState(
+    () => localStorage.getItem("darkMode") === "true"
+  );
 
   useEffect(() => {
     localStorage.setItem("cartItems", JSON.stringify(cartItems));
@@ -43,7 +61,7 @@ function App() {
   }, [wishlist]);
 
   useEffect(() => {
-    localStorage.setItem("darkMode", darkMode);
+    localStorage.setItem("darkMode", String(darkMode));
 
     if (darkMode) {
       document.documentElement.classList.add("dark");
@@ -52,18 +70,27 @@ function App() {
     }
   }, [darkMode]);
 
-  const cartCount = cartItems.reduce((total, item) => total + item.quantity, 0);
+  const cartCount = loggedInUser
+    ? cartItems.reduce(
+        (total, item) => total + (item.quantity || 1),
+        0
+      )
+    : 0;
+
+  const wishlistCount = loggedInUser ? wishlist.length : 0;
 
   return (
-    <div className="min-h-screen bg-white dark:bg-slate-950 text-gray-900 dark:text-white transition duration-500">
+    <div className="flex min-h-screen flex-col bg-white text-gray-900 dark:bg-slate-950 dark:text-white">
       <Navbar
         cartCount={cartCount}
-        wishlistCount={wishlist.length}
+        wishlistCount={wishlistCount}
+        loggedInUser={loggedInUser}
+        setLoggedInUser={setLoggedInUser}
         darkMode={darkMode}
         setDarkMode={setDarkMode}
       />
 
-      <div className="pt-20">
+      <main className="flex-grow">
         <Routes>
           <Route
             path="/"
@@ -71,13 +98,13 @@ function App() {
               <Home
                 search={search}
                 setSearch={setSearch}
-                cartCount={cartCount}
                 selectedCategory={selectedCategory}
                 setSelectedCategory={setSelectedCategory}
                 cartItems={cartItems}
                 setCartItems={setCartItems}
                 wishlist={wishlist}
                 setWishlist={setWishlist}
+                loggedInUser={loggedInUser}
               />
             }
           />
@@ -87,20 +114,42 @@ function App() {
             element={
               <Menu
                 search={search}
-                cartCount={cartCount}
-                setCartCount={() => {}}
+                setSearch={setSearch}
                 selectedCategory={selectedCategory}
+                setSelectedCategory={setSelectedCategory}
                 cartItems={cartItems}
                 setCartItems={setCartItems}
                 wishlist={wishlist}
                 setWishlist={setWishlist}
+                loggedInUser={loggedInUser}
+              />
+            }
+          />
+
+          <Route path="/contact" element={<Contact />} />
+
+          <Route
+            path="/food/:id"
+            element={
+              <FoodDetails
+                cartItems={cartItems}
+                setCartItems={setCartItems}
+                wishlist={wishlist}
+                setWishlist={setWishlist}
+                loggedInUser={loggedInUser}
               />
             }
           />
 
           <Route
             path="/cart"
-            element={<Cart cartItems={cartItems} setCartItems={setCartItems} />}
+            element={
+              <Cart
+                cartItems={cartItems}
+                setCartItems={setCartItems}
+                loggedInUser={loggedInUser}
+              />
+            }
           />
 
           <Route
@@ -111,44 +160,59 @@ function App() {
                 setWishlist={setWishlist}
                 cartItems={cartItems}
                 setCartItems={setCartItems}
+                loggedInUser={loggedInUser}
               />
             }
           />
 
           <Route
-            path="/food/:id"
+            path="/login"
             element={
-              <FoodDetails
-                cartItems={cartItems}
-                setCartItems={setCartItems}
-                wishlist={wishlist}
-                setWishlist={setWishlist}
+              <Login
+                setLoggedInUser={setLoggedInUser}
               />
             }
+          />
+
+          <Route
+            path="/register"
+            element={<Register />}
+          />
+
+          <Route
+            path="/forgot-password"
+            element={<ForgotPassword />}
           />
 
           <Route
             path="/checkout"
             element={
-              <Checkout cartItems={cartItems} setCartItems={setCartItems} />
+              <Checkout
+                cartItems={cartItems}
+                setCartItems={setCartItems}
+                loggedInUser={loggedInUser}
+              />
             }
           />
 
-          <Route path="/success" element={<OrderSuccess />} />
+          <Route
+            path="/order-history"
+            element={<OrderHistory />}
+          />
 
-          <Route path="/contact" element={<Contact />} />
-
-          <Route path="/login" element={<Login />} />
-
-          <Route path="/register" element={<Register />} />
-
-          <Route path="/forgot-password" element={<ForgotPassword />} /> {/* <-- 2. Route ikkada add chesamu */}
-
-          <Route path="/profile" element={<Profile />} />
-
-          <Route path="/orders" element={<OrderHistory />} />
+          <Route
+            path="/profile"
+            element={
+              <Profile
+                loggedInUser={loggedInUser}
+                setLoggedInUser={setLoggedInUser}
+              />
+            }
+          />
         </Routes>
-      </div>
+      </main>
+
+      <Footer />
     </div>
   );
 }

@@ -2,29 +2,37 @@ import PopularFoods from "../components/PopularFoods";
 
 function Menu({
   search = "",
-  cartCount = 0,
-  setCartCount = () => {},
+  setSearch = () => {},
   selectedCategory = "All",
+  setSelectedCategory = () => {},
   cartItems = [],
   setCartItems = () => {},
   wishlist = [],
   setWishlist = () => {},
+  loggedInUser = null,
 }) {
   return (
-    <div className="pt-24 min-h-screen bg-gray-100 dark:bg-slate-950">
-      <h1 className="text-4xl font-bold text-center py-8 text-orange-500">
-        🍔 Our Menu
-      </h1>
+    <div className="min-h-screen bg-gray-100 dark:bg-slate-950 transition duration-500">
+      <div className="pt-10 pb-4">
+        <h1 className="text-4xl font-extrabold text-center text-orange-500">
+          🍔 Our Menu
+        </h1>
+
+        <p className="text-center mt-3 text-gray-600 dark:text-gray-400">
+          Explore our delicious food collection
+        </p>
+      </div>
 
       <PopularFoods
         search={search}
-        cartCount={cartCount}
-        setCartCount={setCartCount}
+        setSearch={setSearch}
         selectedCategory={selectedCategory}
+        setSelectedCategory={setSelectedCategory}
         cartItems={cartItems}
         setCartItems={setCartItems}
         wishlist={wishlist}
         setWishlist={setWishlist}
+        loggedInUser={loggedInUser}
       />
     </div>
   );

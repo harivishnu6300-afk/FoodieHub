@@ -14,7 +14,7 @@ function Checkout({ cartItems, setCartItems }) {
   const [discount, setDiscount] = useState(0);
 
   const subtotal = cartItems.reduce(
-    (total, item) => total + item.price * item.quantity,
+    (total, item) => total + item.price * (item.quantity || 1),
     0,
   );
 
@@ -56,7 +56,7 @@ function Checkout({ cartItems, setCartItems }) {
     localStorage.setItem("orders", JSON.stringify([...oldOrders, newOrder]));
 
     setCartItems([]);
-    localStorage.removeItem("cartItems");
+    localStorage.removeItem("cart"); // ఇక్కడ "cartItems" బదులుగా "cart" అని కరెక్ట్ చేశాను
 
     alert("Order Placed Successfully 🎉");
     navigate("/success");
@@ -65,7 +65,7 @@ function Checkout({ cartItems, setCartItems }) {
   return (
     <section className="min-h-screen bg-gray-100 dark:bg-slate-950 py-24 transition duration-500">
       <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-8 px-6">
-        <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-lg">
+        <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-lg transition">
           <h1 className="text-3xl font-bold mb-6 text-gray-900 dark:text-white">
             Checkout
           </h1>
@@ -75,7 +75,7 @@ function Checkout({ cartItems, setCartItems }) {
             placeholder="Full Name"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full border dark:border-slate-600 bg-white dark:bg-slate-700 dark:text-white p-3 rounded-lg mb-4"
+            className="w-full border dark:border-slate-600 bg-white dark:bg-slate-700 dark:text-white p-3 rounded-xl mb-4 focus:outline-orange-500"
           />
 
           <input
@@ -83,14 +83,14 @@ function Checkout({ cartItems, setCartItems }) {
             placeholder="Mobile Number"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
-            className="w-full border dark:border-slate-600 bg-white dark:bg-slate-700 dark:text-white p-3 rounded-lg mb-4"
+            className="w-full border dark:border-slate-600 bg-white dark:bg-slate-700 dark:text-white p-3 rounded-xl mb-4 focus:outline-orange-500"
           />
 
           <textarea
             placeholder="Address"
             value={address}
             onChange={(e) => setAddress(e.target.value)}
-            className="w-full border dark:border-slate-600 bg-white dark:bg-slate-700 dark:text-white p-3 rounded-lg mb-4 h-28"
+            className="w-full border dark:border-slate-600 bg-white dark:bg-slate-700 dark:text-white p-3 rounded-xl mb-4 h-28 focus:outline-orange-500"
           />
 
           <input
@@ -98,7 +98,7 @@ function Checkout({ cartItems, setCartItems }) {
             placeholder="City"
             value={city}
             onChange={(e) => setCity(e.target.value)}
-            className="w-full border dark:border-slate-600 bg-white dark:bg-slate-700 dark:text-white p-3 rounded-lg mb-4"
+            className="w-full border dark:border-slate-600 bg-white dark:bg-slate-700 dark:text-white p-3 rounded-xl mb-4 focus:outline-orange-500"
           />
 
           <input
@@ -106,13 +106,13 @@ function Checkout({ cartItems, setCartItems }) {
             placeholder="Pincode"
             value={pincode}
             onChange={(e) => setPincode(e.target.value)}
-            className="w-full border dark:border-slate-600 bg-white dark:bg-slate-700 dark:text-white p-3 rounded-lg mb-4"
+            className="w-full border dark:border-slate-600 bg-white dark:bg-slate-700 dark:text-white p-3 rounded-xl mb-4 focus:outline-orange-500"
           />
 
           <select
             value={payment}
             onChange={(e) => setPayment(e.target.value)}
-            className="w-full border dark:border-slate-600 bg-white dark:bg-slate-700 dark:text-white p-3 rounded-lg mb-4"
+            className="w-full border dark:border-slate-600 bg-white dark:bg-slate-700 dark:text-white p-3 rounded-xl mb-4 focus:outline-orange-500"
           >
             <option>UPI</option>
             <option>Cash on Delivery</option>
@@ -122,46 +122,48 @@ function Checkout({ cartItems, setCartItems }) {
           <div className="flex gap-3 mb-6">
             <input
               type="text"
-              placeholder="Coupon Code"
+              placeholder="Coupon Code (e.g. SAVE10)"
               value={coupon}
               onChange={(e) => setCoupon(e.target.value)}
-              className="flex-1 border dark:border-slate-600 bg-white dark:bg-slate-700 dark:text-white p-3 rounded-lg"
+              className="flex-1 border dark:border-slate-600 bg-white dark:bg-slate-700 dark:text-white p-3 rounded-xl focus:outline-orange-500"
             />
 
             <button
               onClick={applyCoupon}
-              className="bg-green-500 text-white px-5 rounded-lg hover:bg-green-600"
+              className="bg-green-500 text-white px-5 rounded-xl font-semibold hover:bg-green-600 transition"
             >
               Apply
             </button>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-lg h-fit">
+        <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-lg h-fit transition">
           <h2 className="text-3xl font-bold mb-6 text-gray-900 dark:text-white">
             Order Summary
           </h2>
 
           <div className="space-y-3 text-lg">
-            <div className="flex justify-between dark:text-white">
+            <div className="flex justify-between text-gray-700 dark:text-gray-300">
               <span>Subtotal</span>
               <span>₹{subtotal}</span>
             </div>
 
-            <div className="flex justify-between dark:text-white">
+            <div className="flex justify-between text-gray-700 dark:text-gray-300">
               <span>Delivery</span>
               <span>₹{delivery}</span>
             </div>
 
-            <div className="flex justify-between dark:text-white">
-              <span>GST</span>
+            <div className="flex justify-between text-gray-700 dark:text-gray-300">
+              <span>GST (5%)</span>
               <span>₹{gst}</span>
             </div>
 
-            <div className="flex justify-between text-green-500">
-              <span>Discount</span>
-              <span>-₹{discount}</span>
-            </div>
+            {discount > 0 && (
+              <div className="flex justify-between text-green-500 font-semibold">
+                <span>Discount</span>
+                <span>-₹{discount}</span>
+              </div>
+            )}
 
             <hr className="my-4 dark:border-slate-600" />
 
@@ -173,7 +175,7 @@ function Checkout({ cartItems, setCartItems }) {
 
           <button
             onClick={placeOrder}
-            className="w-full mt-8 bg-orange-500 hover:bg-orange-600 text-white py-4 rounded-xl text-lg font-bold transition"
+            className="w-full mt-8 bg-orange-500 hover:bg-orange-600 text-white py-4 rounded-xl text-lg font-bold transition shadow-lg"
           >
             Place Order 🚀
           </button>

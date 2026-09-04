@@ -13,46 +13,46 @@ function Profile() {
   const [phone, setPhone] = useState("");
 
   useEffect(() => {
-    const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
-    if (!isLoggedIn) {
+    // 1. లాగిన్ అయిన యూజర్‌ని చెక్ చేయడం (loggedInUser లేదా user ఏది ఉన్నా తీసుకునేలా)
+    const savedUser = JSON.parse(localStorage.getItem("loggedInUser")) || JSON.parse(localStorage.getItem("user"));
+    const isLoggedIn = localStorage.getItem("isLoggedIn") === "true" || savedUser;
+
+    if (!isLoggedIn || !savedUser) {
       navigate("/login");
       return;
     }
 
-    const savedUser = JSON.parse(localStorage.getItem("user"));
-    if (savedUser) {
-      setUser(savedUser);
-      setName(savedUser.name || "");
-      setPhone(savedUser.phone || "");
-    }
+    setUser(savedUser);
+    setName(savedUser.name || "");
+    setPhone(savedUser.phone || savedUser.mobile || "");
 
-    const savedOrders = JSON.parse(localStorage.getItem("orders")) || [
-      { id: "ORD12345", date: "2026-06-01", total: 450, status: "Delivered", items: "Burger, French Fries" },
-      { id: "ORD67890", date: "2026-06-03", total: 320, status: "On the way", items: "Pizza, Cold Drink" }
-    ];
+    // 2. లోకల్ స్టోరేజ్ నుండి రియల్ ఆర్డర్స్ తెచ్చుకోవడం
+    const savedOrders = JSON.parse(localStorage.getItem("orders")) || [];
     setOrders(savedOrders);
 
-    const savedWishlist = JSON.parse(localStorage.getItem("wishlist")) || [
-      { id: 1, name: "Cheese Burger", price: 199, emoji: "🍔" },
-      { id: 2, name: "Pepperoni Pizza", price: 349, emoji: "🍕" }
-    ];
+    // 3. లోకల్ స్టోరేజ్ నుండి రియల్ విష్‌లిస్ట్ తెచ్చుకోవడం
+    const savedWishlist = JSON.parse(localStorage.getItem("wishlist")) || [];
     setWishlist(savedWishlist);
   }, [navigate]);
 
   const handleUpdateProfile = (e) => {
     e.preventDefault();
     const updatedUser = { ...user, name, phone };
+    
+    // రెండు కీలలోనూ సేవ్ చేస్తున్నాం ఎందుకంటే ఎక్కడ మిస్ అయినా డేటా ఉండాలి
+    localStorage.setItem("loggedInUser", JSON.stringify(updatedUser));
     localStorage.setItem("user", JSON.stringify(updatedUser));
+    localStorage.setItem("isLoggedIn", "true");
+
     setUser(updatedUser);
     setIsEditing(false);
     alert("Profile updated successfully! 🎉");
-    window.location.reload();
   };
 
   const handleLogout = () => {
     localStorage.removeItem("isLoggedIn");
+    localStorage.removeItem("loggedInUser");
     navigate("/login");
-    window.location.reload();
   };
 
   if (!user) return null;
@@ -80,7 +80,7 @@ function Profile() {
           </button>
         </div>
 
-        {/* Flipkart style Layout: Sidebar + Content Area */}
+        {/* Layout: Sidebar + Content Area */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           
           {/* Left Sidebar Navigation */}
@@ -103,7 +103,7 @@ function Profile() {
                   : "text-gray-700 dark:text-gray-200 hover:bg-orange-50 dark:hover:bg-slate-800"
               }`}
             >
-              📦 My Orders
+              📦 My Orders ({orders.length})
             </button>
             <button
               onClick={() => setActiveTab("wishlist")}
@@ -113,7 +113,7 @@ function Profile() {
                   : "text-gray-700 dark:text-gray-200 hover:bg-orange-50 dark:hover:bg-slate-800"
               }`}
             >
-              ❤️ My Wishlist
+              ❤️ My Wishlist ({wishlist.length})
             </button>
             <button
               onClick={() => setActiveTab("address")}
@@ -153,11 +153,11 @@ function Profile() {
                     </div>
                     <div>
                       <label className="text-xs text-gray-400 block font-semibold">Email Address</label>
-                      <p className="text-lg font-medium">{user.email}</p>
+                      <p className="text-lg font-medium">{user.email || "Not Added"}</p>
                     </div>
                     <div>
                       <label className="text-xs text-gray-400 block font-semibold">Phone Number</label>
-                      <p className="text-lg font-medium">{user.phone || "Not Added yet"}</p>
+                      <p className="text-lg font-medium">{user.phone || user.mobile || "Not Added yet"}</p>
                     </div>
                   </div>
                 ) : (
@@ -207,22 +207,22 @@ function Profile() {
               <div>
                 <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-6 border-b pb-4 dark:border-slate-800">My Orders</h2>
                 {orders.length === 0 ? (
-                  <p className="text-gray-500">No active or past orders found.</p>
+                  <p className="text-gray-500">No active or past orders found in local storage.</p>
                 ) : (
                   <div className="space-y-4">
                     {orders.map((order, index) => (
                       <div key={index} className="border dark:border-slate-800 p-4 rounded-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-gray-50 dark:bg-slate-800/50">
                         <div>
-                          <span className="text-xs font-bold text-orange-500">{order.id}</span>
-                          <h3 className="font-bold text-gray-800 dark:text-white">{order.items}</h3>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">Ordered on: {order.date}</p>
+                          <span className="text-xs font-bold text-orange-500">{order.id || `ORD00${index+1}`}</span>
+                          <h3 className="font-bold text-gray-800 dark:text-white">{order.items || order.name || "Food Item"}</h3>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">Ordered on: {order.date || "Recent"}</p>
                         </div>
                         <div className="text-right">
-                          <p className="font-bold text-gray-800 dark:text-white">₹{order.total}</p>
+                          <p className="font-bold text-gray-800 dark:text-white">₹{order.total || order.price}</p>
                           <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
-                            order.status === "Delivered" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"
+                            (order.status === "Delivered") ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"
                           }`}>
-                            {order.status}
+                            {order.status || "Processing"}
                           </span>
                         </div>
                       </div>
@@ -242,7 +242,7 @@ function Profile() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {wishlist.map((item, index) => (
                       <div key={index} className="border dark:border-slate-800 p-4 rounded-xl flex items-center gap-4 bg-gray-50 dark:bg-slate-800/50">
-                        <span className="text-4xl">{item.emoji}</span>
+                        <span className="text-4xl">{item.emoji || "🍽️"}</span>
                         <div>
                           <h3 className="font-bold text-gray-800 dark:text-white">{item.name}</h3>
                           <p className="text-orange-500 font-semibold">₹{item.price}</p>
@@ -261,8 +261,8 @@ function Profile() {
                 <div className="border dark:border-slate-800 p-4 rounded-xl bg-gray-50 dark:bg-slate-800/50 flex justify-between items-center">
                   <div>
                     <span className="bg-orange-100 text-orange-600 text-xs px-2 py-1 rounded font-bold uppercase">Home</span>
-                    <p className="font-semibold text-gray-800 dark:text-white mt-2">Flat No 402, Sunshine Apartments</p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Hyderabad, Telangana - 500081</p>
+                    <p className="font-semibold text-gray-800 dark:text-white mt-2">{user.address || "Flat No 402, Sunshine Apartments"}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Hyderabad, Telangana</p>
                   </div>
                   <button className="text-sm text-orange-500 font-semibold hover:underline">Edit</button>
                 </div>

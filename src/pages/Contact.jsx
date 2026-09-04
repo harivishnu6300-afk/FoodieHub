@@ -1,4 +1,26 @@
+import { useState } from "react";
+
 function Contact() {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [message, setMessage] = useState("");
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+
+    if (!name.trim() || !email.trim() || !message.trim()) {
+      alert("Please fill in all the fields! ⚠️");
+      return;
+    }
+
+    alert("Message Sent Successfully 🎉");
+    
+    // Clear form inputs after successful submission
+    setName("");
+    setEmail("");
+    setMessage("");
+  };
+
   return (
     <section
       className="
@@ -91,10 +113,12 @@ function Contact() {
             Send Message
           </h3>
 
-          <form className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <input
               type="text"
               placeholder="Your Name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
               className="
                 w-full
                 border
@@ -117,6 +141,8 @@ function Contact() {
             <input
               type="email"
               placeholder="Your Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               className="
                 w-full
                 border
@@ -139,6 +165,8 @@ function Contact() {
             <textarea
               rows="5"
               placeholder="Your Message"
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
               className="
                 w-full
                 border
@@ -159,8 +187,7 @@ function Contact() {
             ></textarea>
 
             <button
-              type="button"
-              onClick={() => alert("Message Sent Successfully 🎉")}
+              type="submit"
               className="
                 bg-orange-500
                 text-white
