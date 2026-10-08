@@ -56,7 +56,7 @@ function Checkout({ cartItems, setCartItems, loggedInUser }) {
       setPlacingOrder(true);
 
       const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/orders`,
+        `https://foodiehub-backend-uuax.onrender.com/api/orders`,
         {
           method: "POST",
           headers: {
@@ -239,4 +239,5 @@ function Checkout({ cartItems, setCartItems, loggedInUser }) {
 }
 
 export default Checkout;
+
 

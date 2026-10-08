@@ -103,7 +103,7 @@ function Register() {
       const fullPhoneNumber = `${countryCode}${cleanPhone}`;
 
       const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/auth/register`,
+        `https://foodiehub-backend-uuax.onrender.com/api/auth/register`,
         {
           method: "POST",
           headers: {
@@ -328,4 +328,5 @@ function Register() {
 }
 
 export default Register;
+
 

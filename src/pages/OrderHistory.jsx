@@ -29,7 +29,7 @@ function OrderHistory() {
         }
 
         const response = await fetch(
-          `${import.meta.env.VITE_API_URL}/api/orders/user/${user.id}`
+          `https://foodiehub-backend-uuax.onrender.com/api/orders/user/${user.id}`
         );
 
         const data = await response.json();
@@ -223,4 +223,5 @@ function OrderHistory() {
 }
 
 export default OrderHistory;
+
 

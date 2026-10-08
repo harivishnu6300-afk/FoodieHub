@@ -39,7 +39,7 @@ function Login({ setLoggedInUser }) {
       setLoading(true);
 
       const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/auth/login`,
+        `https://foodiehub-backend-uuax.onrender.com/api/auth/login`,
         {
           method: "POST",
           headers: {
@@ -224,4 +224,5 @@ function Login({ setLoggedInUser }) {
 }
 
 export default Login;
+
 
