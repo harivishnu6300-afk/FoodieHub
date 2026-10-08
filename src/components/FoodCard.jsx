@@ -1,10 +1,11 @@
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 function FoodCard({
   id,
   image,
   name,
   price,
+  stock,
   cartItems,
   setCartItems,
   wishlist,
@@ -12,6 +13,12 @@ function FoodCard({
   loggedInUser,
 }) {
   const navigate = useNavigate();
+
+  const currentCartItem = cartItems.find((item) => item.id === id);
+  const cartQuantity = currentCartItem?.quantity || 0;
+  const availableForUser = Math.max(stock - cartQuantity, 0);
+  const isOutOfStock = stock <= 0;
+  const maxReached = availableForUser <= 0;
 
   const handleLoginRequired = () => {
     alert("Please login first to continue.");
@@ -37,6 +44,16 @@ function FoodCard({
   const addToCart = () => {
     if (!loggedInUser) {
       handleLoginRequired();
+      return;
+    }
+
+    if (isOutOfStock) {
+      alert("This item is currently out of stock.");
+      return;
+    }
+
+    if (maxReached) {
+      alert(`Only ${stock} item(s) are available.`);
       return;
     }
 
@@ -115,7 +132,7 @@ function FoodCard({
           className="absolute right-3 top-3 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white text-red-500 shadow-lg transition-all duration-300 hover:scale-110 hover:bg-red-500 hover:text-white dark:bg-slate-700"
           title="Add to Wishlist"
         >
-          ❤️
+          ♥
         </button>
 
         <button
@@ -123,7 +140,7 @@ function FoodCard({
           className="absolute right-3 top-16 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white text-blue-500 shadow-lg transition-all duration-300 hover:scale-110 hover:bg-blue-500 hover:text-white dark:bg-slate-700 dark:text-blue-400"
           title="Share Food"
         >
-          🔗
+          ↗
         </button>
       </div>
 
@@ -138,23 +155,43 @@ function FoodCard({
           </p>
 
           <span className="font-semibold text-yellow-500">
-            ⭐ 4.8
+            ★ 4.5
           </span>
         </div>
 
+        <div className="mt-3">
+          {isOutOfStock ? (
+            <span className="inline-flex rounded-full bg-red-100 px-3 py-1 text-sm font-semibold text-red-600 dark:bg-red-900/30 dark:text-red-400">
+              Out of Stock
+            </span>
+          ) : (
+            <span className="inline-flex rounded-full bg-green-100 px-3 py-1 text-sm font-semibold text-green-700 dark:bg-green-900/30 dark:text-green-400">
+              Available: {availableForUser}
+            </span>
+          )}
+        </div>
+
+        {cartQuantity > 0 && !isOutOfStock && (
+          <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+            In your cart: {cartQuantity}
+          </p>
+        )}
+
         <button
           onClick={addToCart}
-          className="mt-6 w-full cursor-pointer rounded-xl bg-orange-500 py-3 font-semibold text-white shadow-lg transition-all duration-300 hover:scale-105 hover:bg-orange-600"
+          disabled={isOutOfStock || maxReached}
+          className={`mt-5 w-full rounded-xl px-4 py-3 font-bold text-white transition-all duration-300 ${
+            isOutOfStock || maxReached
+              ? "cursor-not-allowed bg-gray-400"
+              : "bg-orange-500 hover:scale-105 hover:bg-orange-600"
+          }`}
         >
-          🛒 Add To Cart
+          {isOutOfStock
+            ? "Out of Stock"
+            : maxReached
+            ? "Maximum Available Added"
+            : "Add to Cart"}
         </button>
-
-        <Link
-          to={`/food/${id}`}
-          className="mt-4 block rounded-xl border-2 border-blue-500 py-3 text-center font-semibold text-blue-500 transition-all duration-300 hover:bg-blue-500 hover:text-white dark:border-blue-400 dark:text-blue-400"
-        >
-          👀 View Details
-        </Link>
       </div>
     </div>
   );

@@ -21,63 +21,119 @@ function App() {
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
 
-  const [cartItems, setCartItems] = useState(() => {
-    try {
-      const savedCart = localStorage.getItem("cartItems");
-      return savedCart ? JSON.parse(savedCart) : [];
-    } catch {
-      return [];
-    }
-  });
-
-  const [wishlist, setWishlist] = useState(() => {
-    try {
-      const savedWishlist = localStorage.getItem("wishlist");
-      return savedWishlist ? JSON.parse(savedWishlist) : [];
-    } catch {
-      return [];
-    }
-  });
-
   const [loggedInUser, setLoggedInUser] = useState(() => {
     try {
       const savedUser = localStorage.getItem("loggedInUser");
+
       return savedUser ? JSON.parse(savedUser) : null;
     } catch {
       return null;
     }
   });
 
+  const getUserId = (user) => {
+    if (!user) return null;
+
+    return user.id || user.email;
+  };
+
+  const [cartItems, setCartItems] = useState([]);
+  const [wishlist, setWishlist] = useState([]);
+
   const [darkMode, setDarkMode] = useState(
     () => localStorage.getItem("darkMode") === "true"
   );
 
   useEffect(() => {
-    localStorage.setItem("cartItems", JSON.stringify(cartItems));
-  }, [cartItems]);
+    if (!loggedInUser) {
+      setCartItems([]);
+      setWishlist([]);
+      return;
+    }
+
+    const userId = getUserId(loggedInUser);
+
+    try {
+      const savedCart = localStorage.getItem(
+        `cartItems_${userId}`
+      );
+
+      setCartItems(
+        savedCart ? JSON.parse(savedCart) : []
+      );
+    } catch {
+      setCartItems([]);
+    }
+
+    try {
+      const savedWishlist = localStorage.getItem(
+        `wishlist_${userId}`
+      );
+
+      setWishlist(
+        savedWishlist
+          ? JSON.parse(savedWishlist)
+          : []
+      );
+    } catch {
+      setWishlist([]);
+    }
+  }, [loggedInUser]);
 
   useEffect(() => {
-    localStorage.setItem("wishlist", JSON.stringify(wishlist));
-  }, [wishlist]);
+    if (!loggedInUser) return;
+
+    const userId = getUserId(loggedInUser);
+
+    if (!userId) return;
+
+    localStorage.setItem(
+      `cartItems_${userId}`,
+      JSON.stringify(cartItems)
+    );
+  }, [cartItems, loggedInUser]);
 
   useEffect(() => {
-    localStorage.setItem("darkMode", String(darkMode));
+    if (!loggedInUser) return;
+
+    const userId = getUserId(loggedInUser);
+
+    if (!userId) return;
+
+    localStorage.setItem(
+      `wishlist_${userId}`,
+      JSON.stringify(wishlist)
+    );
+  }, [wishlist, loggedInUser]);
+
+  useEffect(() => {
+    localStorage.setItem(
+      "darkMode",
+      String(darkMode)
+    );
 
     if (darkMode) {
-      document.documentElement.classList.add("dark");
+      document.documentElement.classList.add(
+        "dark"
+      );
     } else {
-      document.documentElement.classList.remove("dark");
+      document.documentElement.classList.remove(
+        "dark"
+      );
     }
   }, [darkMode]);
 
   const cartCount = loggedInUser
     ? cartItems.reduce(
-        (total, item) => total + (item.quantity || 1),
+        (total, item) =>
+          total + (item.quantity || 1),
         0
       )
     : 0;
 
-  const wishlistCount = loggedInUser ? wishlist.length : 0;
+  const wishlistCount = loggedInUser
+    ? wishlist.length
+    : 0;
 
   return (
     <div className="flex min-h-screen flex-col bg-white text-gray-900 dark:bg-slate-950 dark:text-white">
@@ -126,7 +182,10 @@ function App() {
             }
           />
 
-          <Route path="/contact" element={<Contact />} />
+          <Route
+            path="/contact"
+            element={<Contact />}
+          />
 
           <Route
             path="/food/:id"
@@ -197,7 +256,11 @@ function App() {
 
           <Route
             path="/order-history"
-            element={<OrderHistory />}
+            element={
+              <OrderHistory
+                loggedInUser={loggedInUser}
+              />
+            }
           />
 
           <Route

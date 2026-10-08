@@ -1,21 +1,23 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-function Checkout({ cartItems, setCartItems }) {
+function Checkout({ cartItems, setCartItems, loggedInUser }) {
   const navigate = useNavigate();
 
-  const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
+  const [name, setName] = useState(loggedInUser?.name || "");
+  const [phone, setPhone] = useState(loggedInUser?.phone || "");
   const [address, setAddress] = useState("");
   const [city, setCity] = useState("");
   const [pincode, setPincode] = useState("");
   const [payment, setPayment] = useState("UPI");
   const [coupon, setCoupon] = useState("");
   const [discount, setDiscount] = useState(0);
+  const [placingOrder, setPlacingOrder] = useState(false);
 
   const subtotal = cartItems.reduce(
-    (total, item) => total + item.price * (item.quantity || 1),
-    0,
+    (total, item) =>
+      total + Number(item.price) * (item.quantity || 1),
+    0
   );
 
   const delivery = subtotal > 0 ? 40 : 0;
@@ -32,41 +34,85 @@ function Checkout({ cartItems, setCartItems }) {
     }
   };
 
-  const placeOrder = () => {
-    if (!name || !phone || !address || !city || !pincode) {
-      alert("Please fill all details");
+  const placeOrder = async () => {
+    if (!loggedInUser) {
+      alert("Please login first.");
+      navigate("/login");
       return;
     }
 
-    const oldOrders = JSON.parse(localStorage.getItem("orders")) || [];
+    if (!cartItems.length) {
+      alert("Your cart is empty.");
+      navigate("/cart");
+      return;
+    }
 
-    const newOrder = {
-      id: Date.now(),
-      customer: name,
-      phone,
-      address,
-      city,
-      pincode,
-      payment,
-      items: cartItems,
-      total,
-      date: new Date().toLocaleString(),
-    };
+    if (!name || !phone || !address || !city || !pincode) {
+      alert("Please fill all details.");
+      return;
+    }
 
-    localStorage.setItem("orders", JSON.stringify([...oldOrders, newOrder]));
+    try {
+      setPlacingOrder(true);
 
-    setCartItems([]);
-    localStorage.removeItem("cart"); // ఇక్కడ "cartItems" బదులుగా "cart" అని కరెక్ట్ చేశాను
+      const response = await fetch(
+        "http://localhost:5000/api/orders",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            userId: loggedInUser.id,
+            email: loggedInUser.email,
+            name,
+            phone,
+            address,
+            city,
+            pincode,
+            payment,
+            coupon,
+            items: cartItems.map((item) => ({
+              id: item.id,
+              quantity: item.quantity || 1,
+            })),
+          }),
+        }
+      );
 
-    alert("Order Placed Successfully 🎉");
-    navigate("/success");
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(
+          data.message || "Failed to place order"
+        );
+      }
+
+      setCartItems([]);
+
+      const userId =
+        loggedInUser.id || loggedInUser.email;
+
+      localStorage.removeItem(`cartItems_${userId}`);
+
+      alert(
+        `Order #${data.order.id} placed successfully 🎉`
+      );
+
+      navigate("/order-history");
+    } catch (error) {
+      console.error("Order placement error:", error);
+      alert(error.message || "Unable to place order.");
+    } finally {
+      setPlacingOrder(false);
+    }
   };
 
   return (
-    <section className="min-h-screen bg-gray-100 dark:bg-slate-950 py-24 transition duration-500">
-      <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-8 px-6">
-        <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-lg transition">
-          <h1 className="text-3xl font-bold mb-6 text-gray-900 dark:text-white">
+    <section className="min-h-screen bg-gray-100 py-24 transition duration-500 dark:bg-slate-950">
+      <div className="mx-auto grid max-w-6xl gap-8 px-6 md:grid-cols-2">
+        <div className="rounded-2xl bg-white p-8 shadow-lg dark:bg-slate-800">
+          <h1 className="mb-6 text-3xl font-bold text-gray-900 dark:text-white">
             Checkout
           </h1>
 
@@ -75,7 +121,7 @@ function Checkout({ cartItems, setCartItems }) {
             placeholder="Full Name"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full border dark:border-slate-600 bg-white dark:bg-slate-700 dark:text-white p-3 rounded-xl mb-4 focus:outline-orange-500"
+            className="mb-4 w-full rounded-xl border bg-white p-3 dark:border-slate-600 dark:bg-slate-700 dark:text-white"
           />
 
           <input
@@ -83,14 +129,14 @@ function Checkout({ cartItems, setCartItems }) {
             placeholder="Mobile Number"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
-            className="w-full border dark:border-slate-600 bg-white dark:bg-slate-700 dark:text-white p-3 rounded-xl mb-4 focus:outline-orange-500"
+            className="mb-4 w-full rounded-xl border bg-white p-3 dark:border-slate-600 dark:bg-slate-700 dark:text-white"
           />
 
           <textarea
             placeholder="Address"
             value={address}
             onChange={(e) => setAddress(e.target.value)}
-            className="w-full border dark:border-slate-600 bg-white dark:bg-slate-700 dark:text-white p-3 rounded-xl mb-4 h-28 focus:outline-orange-500"
+            className="mb-4 h-28 w-full rounded-xl border bg-white p-3 dark:border-slate-600 dark:bg-slate-700 dark:text-white"
           />
 
           <input
@@ -98,7 +144,7 @@ function Checkout({ cartItems, setCartItems }) {
             placeholder="City"
             value={city}
             onChange={(e) => setCity(e.target.value)}
-            className="w-full border dark:border-slate-600 bg-white dark:bg-slate-700 dark:text-white p-3 rounded-xl mb-4 focus:outline-orange-500"
+            className="mb-4 w-full rounded-xl border bg-white p-3 dark:border-slate-700 dark:bg-slate-700 dark:text-white"
           />
 
           <input
@@ -106,39 +152,39 @@ function Checkout({ cartItems, setCartItems }) {
             placeholder="Pincode"
             value={pincode}
             onChange={(e) => setPincode(e.target.value)}
-            className="w-full border dark:border-slate-600 bg-white dark:bg-slate-700 dark:text-white p-3 rounded-xl mb-4 focus:outline-orange-500"
+            className="mb-4 w-full rounded-xl border bg-white p-3 dark:border-slate-600 dark:bg-slate-700 dark:text-white"
           />
 
           <select
             value={payment}
             onChange={(e) => setPayment(e.target.value)}
-            className="w-full border dark:border-slate-600 bg-white dark:bg-slate-700 dark:text-white p-3 rounded-xl mb-4 focus:outline-orange-500"
+            className="mb-4 w-full rounded-xl border bg-white p-3 dark:border-slate-600 dark:bg-slate-700 dark:text-white"
           >
             <option>UPI</option>
             <option>Cash on Delivery</option>
             <option>Credit Card</option>
           </select>
 
-          <div className="flex gap-3 mb-6">
+          <div className="mb-6 flex gap-3">
             <input
               type="text"
               placeholder="Coupon Code (e.g. SAVE10)"
               value={coupon}
               onChange={(e) => setCoupon(e.target.value)}
-              className="flex-1 border dark:border-slate-600 bg-white dark:bg-slate-700 dark:text-white p-3 rounded-xl focus:outline-orange-500"
+              className="flex-1 rounded-xl border bg-white p-3 dark:border-slate-600 dark:bg-slate-700 dark:text-white"
             />
 
             <button
               onClick={applyCoupon}
-              className="bg-green-500 text-white px-5 rounded-xl font-semibold hover:bg-green-600 transition"
+              className="rounded-xl bg-green-500 px-5 font-semibold text-white hover:bg-green-600"
             >
               Apply
             </button>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-lg h-fit transition">
-          <h2 className="text-3xl font-bold mb-6 text-gray-900 dark:text-white">
+        <div className="h-fit rounded-2xl bg-white p-8 shadow-lg dark:bg-slate-800">
+          <h2 className="mb-6 text-3xl font-bold text-gray-900 dark:text-white">
             Order Summary
           </h2>
 
@@ -159,7 +205,7 @@ function Checkout({ cartItems, setCartItems }) {
             </div>
 
             {discount > 0 && (
-              <div className="flex justify-between text-green-500 font-semibold">
+              <div className="flex justify-between font-semibold text-green-500">
                 <span>Discount</span>
                 <span>-₹{discount}</span>
               </div>
@@ -175,9 +221,16 @@ function Checkout({ cartItems, setCartItems }) {
 
           <button
             onClick={placeOrder}
-            className="w-full mt-8 bg-orange-500 hover:bg-orange-600 text-white py-4 rounded-xl text-lg font-bold transition shadow-lg"
+            disabled={placingOrder}
+            className={`mt-8 w-full rounded-xl py-4 text-lg font-bold text-white shadow-lg transition ${
+              placingOrder
+                ? "cursor-not-allowed bg-gray-400"
+                : "bg-orange-500 hover:bg-orange-600"
+            }`}
           >
-            Place Order 🚀
+            {placingOrder
+              ? "Placing Order..."
+              : "Place Order 🚀"}
           </button>
         </div>
       </div>

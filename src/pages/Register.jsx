@@ -25,6 +25,8 @@ function Register() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const selectedCountry =
     countries.find((country) => country.code === countryCode) ||
@@ -32,14 +34,15 @@ function Register() {
 
   const handlePhoneChange = (event) => {
     const numbersOnly = event.target.value.replace(/\D/g, "");
-
     setPhone(numbersOnly.slice(0, selectedCountry.digits));
+    setError("");
   };
 
-  const handleRegister = (event) => {
+  const handleRegister = async (event) => {
     event.preventDefault();
 
     setError("");
+    setSuccess("");
 
     const cleanName = name.trim();
     const cleanEmail = email.trim().toLowerCase();
@@ -95,73 +98,55 @@ function Register() {
     }
 
     try {
-      const savedUsers = localStorage.getItem("users");
-
-      let users = [];
-
-      if (savedUsers) {
-        const parsedUsers = JSON.parse(savedUsers);
-
-        users = Array.isArray(parsedUsers) ? parsedUsers : [];
-      }
-
-      const emailAlreadyExists = users.some((user) => {
-        if (!user || !user.email) {
-          return false;
-        }
-
-        return user.email.trim().toLowerCase() === cleanEmail;
-      });
-
-      if (emailAlreadyExists) {
-        setError(
-          "This email is already registered. Please login or use another email."
-        );
-        return;
-      }
+      setLoading(true);
 
       const fullPhoneNumber = `${countryCode}${cleanPhone}`;
 
-      const phoneAlreadyExists = users.some((user) => {
-        if (!user || !user.phone) {
-          return false;
+      const response = await fetch(
+        "http://localhost:5000/api/auth/register",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            name: cleanName,
+            email: cleanEmail,
+            phone: fullPhoneNumber,
+            password,
+          }),
         }
+      );
 
-        const savedPhone = String(user.phone).replace(/\s/g, "");
+      const data = await response.json();
 
-        return savedPhone === fullPhoneNumber;
-      });
-
-      if (phoneAlreadyExists) {
-        setError(
-          "This phone number is already registered. Please use another number."
+      if (!response.ok || !data.success) {
+        throw new Error(
+          data.message || "Unable to create the account."
         );
-        return;
       }
 
-      const newUser = {
-        id: Date.now(),
-        name: cleanName,
-        email: cleanEmail,
-        countryCode,
-        phone: fullPhoneNumber,
-        password,
-        createdAt: new Date().toISOString(),
-      };
+      setSuccess(
+        "Account created successfully! Redirecting to login..."
+      );
 
-      const updatedUsers = [...users, newUser];
+      setName("");
+      setPhone("");
+      setEmail("");
+      setPassword("");
+      setConfirmPassword("");
 
-      localStorage.setItem("users", JSON.stringify(updatedUsers));
-
-      alert("Account created successfully! Please login.");
-
-      navigate("/login");
+      setTimeout(() => {
+        navigate("/login");
+      }, 1200);
     } catch (error) {
       console.error("Registration error:", error);
-
       setError(
-        "Unable to create the account. Please check your saved data and try again."
+        error.message ||
+          "Unable to create the account. Please try again."
       );
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -184,6 +169,12 @@ function Register() {
           </div>
         )}
 
+        {success && (
+          <div className="mb-5 rounded-xl bg-green-100 dark:bg-green-500/20 border border-green-300 dark:border-green-500/40 px-4 py-3 text-green-600 dark:text-green-400 text-sm font-medium">
+            {success}
+          </div>
+        )}
+
         <form onSubmit={handleRegister} className="space-y-5">
           <div>
             <label className="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-300">
@@ -194,7 +185,10 @@ function Register() {
               type="text"
               placeholder="Enter your name"
               value={name}
-              onChange={(event) => setName(event.target.value)}
+              onChange={(event) => {
+                setName(event.target.value);
+                setError("");
+              }}
               className="w-full rounded-2xl border border-gray-300 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 px-5 py-4 text-gray-900 dark:text-white outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20"
             />
           </div>
@@ -208,7 +202,10 @@ function Register() {
               type="email"
               placeholder="Enter your email"
               value={email}
-              onChange={(event) => setEmail(event.target.value)}
+              onChange={(event) => {
+                setEmail(event.target.value);
+                setError("");
+              }}
               className="w-full rounded-2xl border border-gray-300 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 px-5 py-4 text-gray-900 dark:text-white outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20"
             />
 
@@ -228,6 +225,7 @@ function Register() {
                 onChange={(event) => {
                   setCountryCode(event.target.value);
                   setPhone("");
+                  setError("");
                 }}
                 className="w-36 rounded-2xl border border-gray-300 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 px-3 py-4 text-gray-900 dark:text-white outline-none focus:border-orange-500"
               >
@@ -263,7 +261,10 @@ function Register() {
               type={showPassword ? "text" : "password"}
               placeholder="Enter password"
               value={password}
-              onChange={(event) => setPassword(event.target.value)}
+              onChange={(event) => {
+                setPassword(event.target.value);
+                setError("");
+              }}
               className="w-full rounded-2xl border border-gray-300 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 px-5 py-4 pr-20 text-gray-900 dark:text-white outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20"
             />
 
@@ -285,9 +286,10 @@ function Register() {
               type={showConfirmPassword ? "text" : "password"}
               placeholder="Confirm password"
               value={confirmPassword}
-              onChange={(event) =>
-                setConfirmPassword(event.target.value)
-              }
+              onChange={(event) => {
+                setConfirmPassword(event.target.value);
+                setError("");
+              }}
               className="w-full rounded-2xl border border-gray-300 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 px-5 py-4 pr-20 text-gray-900 dark:text-white outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20"
             />
 
@@ -304,9 +306,10 @@ function Register() {
 
           <button
             type="submit"
-            className="w-full rounded-2xl bg-orange-500 py-4 text-lg font-bold text-white shadow-lg transition duration-300 hover:bg-orange-600 hover:scale-[1.02]"
+            disabled={loading}
+            className="w-full rounded-2xl bg-orange-500 py-4 text-lg font-bold text-white shadow-lg transition duration-300 hover:bg-orange-600 hover:scale-[1.02] disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100"
           >
-            Create Account
+            {loading ? "Creating Account..." : "Create Account"}
           </button>
         </form>
 

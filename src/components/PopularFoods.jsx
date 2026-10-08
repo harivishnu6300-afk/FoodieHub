@@ -1,9 +1,7 @@
+import { useEffect, useState } from "react";
 import FoodCard from "./FoodCard";
 
-import pizza from "../assets/images/pizza.jpg";
-import burger from "../assets/images/burger.jpg";
-import fries from "../assets/images/fries.jpg";
-import drink from "../assets/images/drink.jpg";
+const API_URL = "http://localhost:5000/api/products";
 
 function PopularFoods({
   search,
@@ -14,36 +12,39 @@ function PopularFoods({
   setWishlist,
   loggedInUser,
 }) {
-  const foods = [
-    {
-      id: 1,
-      image: pizza,
-      name: "Cheese Pizza",
-      price: 299,
-      category: "Pizza",
-    },
-    {
-      id: 2,
-      image: burger,
-      name: "Chicken Burger",
-      price: 199,
-      category: "Burger",
-    },
-    {
-      id: 3,
-      image: fries,
-      name: "French Fries",
-      price: 149,
-      category: "Fries",
-    },
-    {
-      id: 4,
-      image: drink,
-      name: "Cold Drink",
-      price: 99,
-      category: "Drinks",
-    },
-  ];
+  const [foods, setFoods] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const fetchFoods = async () => {
+      try {
+        setLoading(true);
+        setError("");
+
+        const response = await fetch(API_URL);
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch products");
+        }
+
+        const data = await response.json();
+
+        setFoods(data.products || []);
+      } catch (err) {
+        console.error(err);
+        setError("Unable to load food items.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchFoods();
+
+    const interval = setInterval(fetchFoods, 5000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   const filteredFoods = foods.filter((food) => {
     const matchesSearch = food.name
@@ -57,39 +58,53 @@ function PopularFoods({
     return matchesSearch && matchesCategory;
   });
 
-  return (
-    <section className="min-h-screen bg-gray-100 dark:bg-slate-950 py-16 transition duration-500">
-      <div className="max-w-7xl mx-auto px-6">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 dark:text-white">
-            Popular Foods
-          </h1>
+  if (loading) {
+    return (
+      <section className="px-6 py-12 text-center">
+        <p className="text-lg font-semibold text-orange-500">
+          Loading food items...
+        </p>
+      </section>
+    );
+  }
 
-          <p className="mt-3 text-gray-600 dark:text-gray-400 text-lg">
-            Fresh, hot and delicious food for you
+  if (error) {
+    return (
+      <section className="px-6 py-12 text-center">
+        <p className="text-lg font-semibold text-red-500">{error}</p>
+      </section>
+    );
+  }
+
+  return (
+    <section className="px-6 py-12">
+      <div className="mx-auto max-w-7xl">
+        <div className="mb-8">
+          <h2 className="text-4xl font-bold text-gray-900 dark:text-white">
+            Popular Foods
+          </h2>
+          <p className="mt-2 text-gray-600 dark:text-gray-300">
+            Fresh food delivered to your doorstep
           </p>
         </div>
 
         {filteredFoods.length === 0 ? (
-          <div className="text-center py-16">
-            <h2 className="text-2xl font-bold text-gray-700 dark:text-white">
-              No Food Found
-            </h2>
-
-            <p className="mt-3 text-gray-500 dark:text-gray-400">
-              Try another category or search.
+          <div className="rounded-2xl bg-gray-100 p-10 text-center dark:bg-slate-800">
+            <p className="text-lg font-semibold text-gray-600 dark:text-gray-300">
+              No food items found.
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {filteredFoods.map((food) => (
               <FoodCard
                 key={food.id}
                 id={food.id}
-                image={food.image}
+                image={`/src/assets/images/${food.image}`}
                 name={food.name}
-                price={food.price}
+                price={Number(food.price)}
                 category={food.category}
+                stock={Number(food.stock)}
                 cartItems={cartItems}
                 setCartItems={setCartItems}
                 wishlist={wishlist}
