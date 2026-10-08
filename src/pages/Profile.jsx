@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 function Profile() {
@@ -44,7 +44,7 @@ function Profile() {
         setOrdersError("");
 
         const response = await fetch(
-          `http://localhost:5000/api/orders/user/${user.id}`
+          `${import.meta.env.VITE_API_URL}/api/orders/user/${user.id}`
         );
 
         const data = await response.json();
@@ -150,7 +150,7 @@ function Profile() {
                   : "text-gray-700 dark:text-gray-200 hover:bg-orange-50 dark:hover:bg-slate-800"
               }`}
             >
-              👤 Personal Information
+              ðŸ‘¤ Personal Information
             </button>
 
             <button
@@ -161,7 +161,7 @@ function Profile() {
                   : "text-gray-700 dark:text-gray-200 hover:bg-orange-50 dark:hover:bg-slate-800"
               }`}
             >
-              📦 My Orders ({orders.length})
+              ðŸ“¦ My Orders ({orders.length})
             </button>
 
             <button
@@ -172,7 +172,7 @@ function Profile() {
                   : "text-gray-700 dark:text-gray-200 hover:bg-orange-50 dark:hover:bg-slate-800"
               }`}
             >
-              ❤️ My Wishlist ({wishlist.length})
+              â¤ï¸ My Wishlist ({wishlist.length})
             </button>
 
             <button
@@ -183,7 +183,7 @@ function Profile() {
                   : "text-gray-700 dark:text-gray-200 hover:bg-orange-50 dark:hover:bg-slate-800"
               }`}
             >
-              📍 Saved Addresses
+              ðŸ“ Saved Addresses
             </button>
           </div>
 
@@ -334,7 +334,7 @@ function Profile() {
                   orders.length === 0 && (
                     <div className="text-center py-10">
                       <div className="text-5xl mb-4">
-                        🍽️
+                        ðŸ½ï¸
                       </div>
 
                       <h3 className="text-lg font-bold text-gray-800 dark:text-white">
@@ -390,7 +390,7 @@ function Profile() {
 
                             <div className="text-right">
                               <p className="font-bold text-gray-800 dark:text-white text-lg">
-                                ₹
+                                â‚¹
                                 {Number(
                                   order.total_amount || 0
                                 ).toFixed(2)}
@@ -422,12 +422,12 @@ function Profile() {
                                       className="flex justify-between text-sm"
                                     >
                                       <span className="text-gray-600 dark:text-gray-400">
-                                        {item.name} ×{" "}
+                                        {item.name} Ã—{" "}
                                         {item.quantity}
                                       </span>
 
                                       <span className="font-medium text-gray-800 dark:text-gray-200">
-                                        ₹
+                                        â‚¹
                                         {(
                                           Number(
                                             item.price || 0
@@ -468,7 +468,7 @@ function Profile() {
                         className="border dark:border-slate-800 p-4 rounded-xl flex items-center gap-4 bg-gray-50 dark:bg-slate-800/50"
                       >
                         <span className="text-4xl">
-                          {item.emoji || "🍽️"}
+                          {item.emoji || "ðŸ½ï¸"}
                         </span>
 
                         <div>
@@ -477,7 +477,7 @@ function Profile() {
                           </h3>
 
                           <p className="text-orange-500 font-semibold">
-                            ₹{item.price}
+                            â‚¹{item.price}
                           </p>
                         </div>
                       </div>
@@ -524,3 +524,4 @@ function Profile() {
 }
 
 export default Profile;
+

@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import FoodCard from "./FoodCard";
 
-const API_URL = "http://localhost:5000/api/products";
+const API_URL = `${import.meta.env.VITE_API_URL}/api/products`;
 
 function PopularFoods({
   search,
@@ -120,3 +120,4 @@ function PopularFoods({
 }
 
 export default PopularFoods;
+

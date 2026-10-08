@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 function OrderHistory() {
@@ -29,7 +29,7 @@ function OrderHistory() {
         }
 
         const response = await fetch(
-          `http://localhost:5000/api/orders/user/${user.id}`
+          `${import.meta.env.VITE_API_URL}/api/orders/user/${user.id}`
         );
 
         const data = await response.json();
@@ -96,7 +96,7 @@ function OrderHistory() {
 
         {!error && orders.length === 0 && (
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-10 text-center">
-            <div className="text-5xl mb-4">🍽️</div>
+            <div className="text-5xl mb-4">ðŸ½ï¸</div>
 
             <h2 className="text-xl font-bold text-gray-800">
               No orders yet
@@ -140,7 +140,7 @@ function OrderHistory() {
                   </span>
 
                   <span className="font-bold text-lg text-gray-900">
-                    ₹{Number(order.total_amount || 0).toFixed(2)}
+                    â‚¹{Number(order.total_amount || 0).toFixed(2)}
                   </span>
                 </div>
               </div>
@@ -173,7 +173,7 @@ function OrderHistory() {
 
                       <div className="text-right">
                         <p className="font-semibold text-gray-900">
-                          ₹
+                          â‚¹
                           {(
                             Number(item.price || 0) *
                             Number(item.quantity || 0)
@@ -181,7 +181,7 @@ function OrderHistory() {
                         </p>
 
                         <p className="text-xs text-gray-500">
-                          ₹{Number(item.price || 0).toFixed(2)} each
+                          â‚¹{Number(item.price || 0).toFixed(2)} each
                         </p>
                       </div>
                     </div>
@@ -223,3 +223,4 @@ function OrderHistory() {
 }
 
 export default OrderHistory;
+

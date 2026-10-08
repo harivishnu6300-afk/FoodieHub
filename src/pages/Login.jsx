@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   FaGoogle,
@@ -39,7 +39,7 @@ function Login({ setLoggedInUser }) {
       setLoading(true);
 
       const response = await fetch(
-        "http://localhost:5000/api/auth/login",
+        `${import.meta.env.VITE_API_URL}/api/auth/login`,
         {
           method: "POST",
           headers: {
@@ -224,3 +224,4 @@ function Login({ setLoggedInUser }) {
 }
 
 export default Login;
+

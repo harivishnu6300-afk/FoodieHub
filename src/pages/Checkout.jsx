@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 function Checkout({ cartItems, setCartItems, loggedInUser }) {
@@ -27,7 +27,7 @@ function Checkout({ cartItems, setCartItems, loggedInUser }) {
   const applyCoupon = () => {
     if (coupon.trim().toUpperCase() === "SAVE10") {
       setDiscount(Math.round(subtotal * 0.1));
-      alert("Coupon Applied 🎉");
+      alert("Coupon Applied ðŸŽ‰");
     } else {
       setDiscount(0);
       alert("Invalid Coupon");
@@ -56,7 +56,7 @@ function Checkout({ cartItems, setCartItems, loggedInUser }) {
       setPlacingOrder(true);
 
       const response = await fetch(
-        "http://localhost:5000/api/orders",
+        `${import.meta.env.VITE_API_URL}/api/orders`,
         {
           method: "POST",
           headers: {
@@ -96,7 +96,7 @@ function Checkout({ cartItems, setCartItems, loggedInUser }) {
       localStorage.removeItem(`cartItems_${userId}`);
 
       alert(
-        `Order #${data.order.id} placed successfully 🎉`
+        `Order #${data.order.id} placed successfully ðŸŽ‰`
       );
 
       navigate("/order-history");
@@ -191,23 +191,23 @@ function Checkout({ cartItems, setCartItems, loggedInUser }) {
           <div className="space-y-3 text-lg">
             <div className="flex justify-between text-gray-700 dark:text-gray-300">
               <span>Subtotal</span>
-              <span>₹{subtotal}</span>
+              <span>â‚¹{subtotal}</span>
             </div>
 
             <div className="flex justify-between text-gray-700 dark:text-gray-300">
               <span>Delivery</span>
-              <span>₹{delivery}</span>
+              <span>â‚¹{delivery}</span>
             </div>
 
             <div className="flex justify-between text-gray-700 dark:text-gray-300">
               <span>GST (5%)</span>
-              <span>₹{gst}</span>
+              <span>â‚¹{gst}</span>
             </div>
 
             {discount > 0 && (
               <div className="flex justify-between font-semibold text-green-500">
                 <span>Discount</span>
-                <span>-₹{discount}</span>
+                <span>-â‚¹{discount}</span>
               </div>
             )}
 
@@ -215,7 +215,7 @@ function Checkout({ cartItems, setCartItems, loggedInUser }) {
 
             <div className="flex justify-between text-2xl font-bold text-orange-500">
               <span>Total</span>
-              <span>₹{total}</span>
+              <span>â‚¹{total}</span>
             </div>
           </div>
 
@@ -230,7 +230,7 @@ function Checkout({ cartItems, setCartItems, loggedInUser }) {
           >
             {placingOrder
               ? "Placing Order..."
-              : "Place Order 🚀"}
+              : "Place Order ðŸš€"}
           </button>
         </div>
       </div>
@@ -239,3 +239,4 @@ function Checkout({ cartItems, setCartItems, loggedInUser }) {
 }
 
 export default Checkout;
+

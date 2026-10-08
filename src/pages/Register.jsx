@@ -1,14 +1,14 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 const countries = [
-  { code: "+91", name: "India", flag: "🇮🇳", digits: 10 },
-  { code: "+1", name: "USA", flag: "🇺🇸", digits: 10 },
-  { code: "+44", name: "UK", flag: "🇬🇧", digits: 10 },
-  { code: "+971", name: "UAE", flag: "🇦🇪", digits: 9 },
-  { code: "+61", name: "Australia", flag: "🇦🇺", digits: 9 },
-  { code: "+65", name: "Singapore", flag: "🇸🇬", digits: 8 },
-  { code: "+81", name: "Japan", flag: "🇯🇵", digits: 10 },
+  { code: "+91", name: "India", flag: "ðŸ‡®ðŸ‡³", digits: 10 },
+  { code: "+1", name: "USA", flag: "ðŸ‡ºðŸ‡¸", digits: 10 },
+  { code: "+44", name: "UK", flag: "ðŸ‡¬ðŸ‡§", digits: 10 },
+  { code: "+971", name: "UAE", flag: "ðŸ‡¦ðŸ‡ª", digits: 9 },
+  { code: "+61", name: "Australia", flag: "ðŸ‡¦ðŸ‡º", digits: 9 },
+  { code: "+65", name: "Singapore", flag: "ðŸ‡¸ðŸ‡¬", digits: 8 },
+  { code: "+81", name: "Japan", flag: "ðŸ‡¯ðŸ‡µ", digits: 10 },
 ];
 
 function Register() {
@@ -103,7 +103,7 @@ function Register() {
       const fullPhoneNumber = `${countryCode}${cleanPhone}`;
 
       const response = await fetch(
-        "http://localhost:5000/api/auth/register",
+        `${import.meta.env.VITE_API_URL}/api/auth/register`,
         {
           method: "POST",
           headers: {
@@ -328,3 +328,4 @@ function Register() {
 }
 
 export default Register;
+
