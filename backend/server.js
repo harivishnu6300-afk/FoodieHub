@@ -75,11 +75,11 @@ app.get("/api/products", async (req, res) => {
 
 app.get("/api/db-check", async (req, res) => {
   try {
-    const [dbInfo] = await db.query(
+    const [dbInfo] = await pool.query(
       "SELECT DATABASE() AS database_name, @@hostname AS hostname",
     );
 
-    const [tables] = await db.query("SHOW TABLES");
+    const [tables] = await pool.query("SHOW TABLES");
 
     res.json({
       success: true,
@@ -435,3 +435,4 @@ const startServer = async () => {
 };
 
 startServer();
+
