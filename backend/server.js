@@ -15,7 +15,7 @@ app.use("/api/auth", authRoutes);
 app.get("/", (req, res) => {
   res.json({
     success: true,
-    message: "FoodieHub API is running"
+    message: "FoodieHub API is running",
   });
 });
 
@@ -25,14 +25,14 @@ app.get("/api/health", async (req, res) => {
 
     res.json({
       success: true,
-      message: "FoodieHub API and MySQL are connected"
+      message: "FoodieHub API and MySQL are connected",
     });
   } catch (error) {
     console.error("Health check failed:", error.message);
 
     res.status(500).json({
       success: false,
-      message: "MySQL connection failed"
+      message: "MySQL connection failed",
     });
   }
 });
@@ -61,14 +61,36 @@ app.get("/api/products", async (req, res) => {
     res.json({
       success: true,
       count: rows.length,
-      products: rows
+      products: rows,
     });
   } catch (error) {
     console.error("Products error:", error.message);
 
     res.status(500).json({
       success: false,
-      message: "Failed to fetch products"
+      message: "Failed to fetch products",
+    });
+  }
+});
+
+app.get("/api/db-check", async (req, res) => {
+  try {
+    const [dbInfo] = await db.query(
+      "SELECT DATABASE() AS database_name, @@hostname AS hostname",
+    );
+
+    const [tables] = await db.query("SHOW TABLES");
+
+    res.json({
+      success: true,
+      database: dbInfo[0].database_name,
+      hostname: dbInfo[0].hostname,
+      tables: tables.map((row) => Object.values(row)[0]),
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message,
     });
   }
 });
@@ -87,27 +109,27 @@ app.post("/api/orders", async (req, res) => {
       pincode,
       payment,
       items,
-      coupon
+      coupon,
     } = req.body;
 
     if (!email && !userId) {
       return res.status(400).json({
         success: false,
-        message: "User information is required"
+        message: "User information is required",
       });
     }
 
     if (!name || !phone || !address || !city || !pincode) {
       return res.status(400).json({
         success: false,
-        message: "All delivery details are required"
+        message: "All delivery details are required",
       });
     }
 
     if (!Array.isArray(items) || items.length === 0) {
       return res.status(400).json({
         success: false,
-        message: "Cart is empty"
+        message: "Cart is empty",
       });
     }
 
@@ -118,7 +140,7 @@ app.post("/api/orders", async (req, res) => {
     if (userId && Number.isInteger(Number(userId))) {
       const [userRows] = await connection.query(
         "SELECT id, name, email, phone FROM users WHERE id = ? FOR UPDATE",
-        [Number(userId)]
+        [Number(userId)],
       );
 
       user = userRows[0];
@@ -127,7 +149,7 @@ app.post("/api/orders", async (req, res) => {
     if (!user && email) {
       const [userRows] = await connection.query(
         "SELECT id, name, email, phone FROM users WHERE LOWER(email) = LOWER(?) FOR UPDATE",
-        [email.trim()]
+        [email.trim()],
       );
 
       user = userRows[0];
@@ -138,7 +160,7 @@ app.post("/api/orders", async (req, res) => {
 
       return res.status(404).json({
         success: false,
-        message: "User account was not found in MySQL. Please login again."
+        message: "User account was not found in MySQL. Please login again.",
       });
     }
 
@@ -156,8 +178,8 @@ app.post("/api/orders", async (req, res) => {
         address.trim(),
         city.trim(),
         "",
-        pincode.trim()
-      ]
+        pincode.trim(),
+      ],
     );
 
     const addressId = addressResult.insertId;
@@ -184,7 +206,7 @@ app.post("/api/orders", async (req, res) => {
         WHERE id = ?
         FOR UPDATE
         `,
-        [productId]
+        [productId],
       );
 
       const product = productRows[0];
@@ -199,7 +221,7 @@ app.post("/api/orders", async (req, res) => {
 
       if (product.stock < quantity) {
         throw new Error(
-          `Only ${product.stock} ${product.name} item(s) are available`
+          `Only ${product.stock} ${product.name} item(s) are available`,
         );
       }
 
@@ -211,7 +233,7 @@ app.post("/api/orders", async (req, res) => {
         id: product.id,
         name: product.name,
         price,
-        quantity
+        quantity,
       });
     }
 
@@ -220,7 +242,11 @@ app.post("/api/orders", async (req, res) => {
 
     let discount = 0;
 
-    if (String(coupon || "").trim().toUpperCase() === "SAVE10") {
+    if (
+      String(coupon || "")
+        .trim()
+        .toUpperCase() === "SAVE10"
+    ) {
       discount = Math.round(subtotal * 0.1);
     }
 
@@ -243,13 +269,7 @@ app.post("/api/orders", async (req, res) => {
       VALUES
         (?, ?, ?, 'placed', ?, ?)
       `,
-      [
-        user.id,
-        addressId,
-        totalAmount,
-        paymentMethod,
-        paymentStatus
-      ]
+      [user.id, addressId, totalAmount, paymentMethod, paymentStatus],
     );
 
     const orderId = orderResult.insertId;
@@ -262,12 +282,7 @@ app.post("/api/orders", async (req, res) => {
         VALUES
           (?, ?, ?, ?)
         `,
-        [
-          orderId,
-          item.id,
-          item.quantity,
-          item.price
-        ]
+        [orderId, item.id, item.quantity, item.price],
       );
 
       const [updateResult] = await connection.query(
@@ -277,17 +292,11 @@ app.post("/api/orders", async (req, res) => {
         WHERE id = ?
           AND stock >= ?
         `,
-        [
-          item.quantity,
-          item.id,
-          item.quantity
-        ]
+        [item.quantity, item.id, item.quantity],
       );
 
       if (updateResult.affectedRows !== 1) {
-        throw new Error(
-          `Stock changed for ${item.name}. Please try again.`
-        );
+        throw new Error(`Stock changed for ${item.name}. Please try again.`);
       }
     }
 
@@ -306,8 +315,8 @@ app.post("/api/orders", async (req, res) => {
         total: totalAmount,
         payment: paymentMethod,
         status: "placed",
-        items: verifiedItems
-      }
+        items: verifiedItems,
+      },
     });
   } catch (error) {
     await connection.rollback();
@@ -316,7 +325,7 @@ app.post("/api/orders", async (req, res) => {
 
     res.status(400).json({
       success: false,
-      message: error.message || "Failed to place order"
+      message: error.message || "Failed to place order",
     });
   } finally {
     connection.release();
@@ -330,7 +339,7 @@ app.get("/api/orders/user/:userId", async (req, res) => {
     if (!Number.isInteger(userId)) {
       return res.status(400).json({
         success: false,
-        message: "Invalid user ID"
+        message: "Invalid user ID",
       });
     }
 
@@ -355,7 +364,7 @@ app.get("/api/orders/user/:userId", async (req, res) => {
       WHERE o.user_id = ?
       ORDER BY o.created_at DESC
       `,
-      [userId]
+      [userId],
     );
 
     for (const order of orders) {
@@ -371,7 +380,7 @@ app.get("/api/orders/user/:userId", async (req, res) => {
         LEFT JOIN products p ON oi.product_id = p.id
         WHERE oi.order_id = ?
         `,
-        [order.id]
+        [order.id],
       );
 
       order.items = items;
@@ -380,14 +389,14 @@ app.get("/api/orders/user/:userId", async (req, res) => {
     res.json({
       success: true,
       count: orders.length,
-      orders
+      orders,
     });
   } catch (error) {
     console.error("Order history error:", error.message);
 
     res.status(500).json({
       success: false,
-      message: "Failed to fetch order history"
+      message: "Failed to fetch order history",
     });
   }
 });
@@ -395,7 +404,7 @@ app.get("/api/orders/user/:userId", async (req, res) => {
 app.use((req, res) => {
   res.status(404).json({
     success: false,
-    message: "API route not found"
+    message: "API route not found",
   });
 });
 
@@ -404,7 +413,7 @@ app.use((err, req, res, next) => {
 
   res.status(500).json({
     success: false,
-    message: "Internal server error"
+    message: "Internal server error",
   });
 });
 
@@ -416,15 +425,10 @@ const startServer = async () => {
 
     app.listen(PORT, () => {
       console.log("MySQL connected");
-      console.log(
-        `FoodieHub API running on http://localhost:${PORT}`
-      );
+      console.log(`FoodieHub API running on http://localhost:${PORT}`);
     });
   } catch (error) {
-    console.error(
-      "MySQL connection failed:",
-      error.message
-    );
+    console.error("MySQL connection failed:", error.message);
 
     process.exit(1);
   }
